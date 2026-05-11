@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hedge-fund-13f-radar"
+version = "0.1.0"
+description = "13F conviction, initiation, exit, and sector-rotation radar with CHP-style verification."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Cubiczan" }]
+dependencies = []
+
+[project.scripts]
+hedge-fund-13f-radar = "hedge_fund_13f_radar.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

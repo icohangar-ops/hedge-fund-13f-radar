@@ -1,0 +1,8 @@
+manager,quarter,ticker,company,sector,shares,prior_shares,value_usd,source_url
+Pershing Sample,2026Q1,GOOG,Alphabet,Communication Services,120000,100000,24000000,https://example.com/pershing-13f
+Pershing Sample,2026Q1,CP,Canadian Pacific,Industrials,90000,0,18000000,https://example.com/pershing-13f
+Pershing Sample,2026Q1,NKE,Nike,Consumer Discretionary,60000,75000,9000000,https://example.com/pershing-13f
+Tiger Sample,2026Q1,GOOG,Alphabet,Communication Services,80000,78000,16000000,https://example.com/tiger-13f
+Tiger Sample,2026Q1,NVDA,Nvidia,Technology,50000,30000,15000000,https://example.com/tiger-13f
+Tiger Sample,2026Q1,CP,Canadian Pacific,Industrials,25000,0,5000000,https://example.com/tiger-13f
+
