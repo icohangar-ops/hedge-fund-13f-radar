@@ -1,6 +1,6 @@
 # Hedge Fund 13F Radar
 
-Hedge Fund 13F Radar turns the Dave Wang 13F automation prompt into a repeatable open-source workflow for tracking hedge fund conviction, initiations, exits, and sector rotation.
+Hedge Fund 13F Radar is a repeatable open-source workflow for tracking hedge fund conviction, initiations, exits, and sector rotation from normalized 13F data.
 
 ## Quick Start
 
@@ -26,4 +26,3 @@ PYTHONPATH=src python3 -m hedge_fund_13f_radar.cli analyze \
 The verifier returns `REQUIRES_HUMAN_VERIFICATION` if source URLs are missing, numeric fields are invalid, or the file does not contain enough managers for cross-fund analysis.
 
 This is not investment advice. It is a research workflow and data-quality gate.
-
