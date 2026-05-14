@@ -3,10 +3,15 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
+import uuid
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
+from decimal import Decimal
 from pathlib import Path
 from typing import Dict, List
+
+logger = logging.getLogger(__name__)
 
 
 REQUIRED_COLUMNS = {
@@ -173,4 +178,105 @@ def _verify(rows: List[Dict[str, str]]) -> VerificationGate:
 
 def report_json(report: RadarReport) -> str:
     return json.dumps(report.to_dict(), indent=2)
+
+
+def store_report(report: RadarReport) -> dict:
+    """Persist a RadarReport and all associated data to CockroachDB."""
+    try:
+        from hedge_fund_13f_radar.db.cockroachdb_layer import (
+            get_session, FundManagerModel, HoldingModel, PositionSignalModel,
+            RadarReportModel, ConsensusTickerModel,
+        )
+        from sqlalchemy import select, func
+    except ImportError:
+        logger.warning("CockroachDB layer not available — skipping store")
+        return {"stored": False, "reason": "cockroachdb_layer not importable"}
+
+    session = get_session()
+    try:
+        report_id = str(uuid.uuid4())
+
+        # Deduplicate managers from signals
+        managers_seen: Dict[str, Dict] = {}
+        for sig in report.position_signals:
+            mgr_name = sig.manager
+            if mgr_name not in managers_seen:
+                managers_seen[mgr_name] = {"name": mgr_name, "aum": 0.0, "style": "", "holdings_count": 0}
+            managers_seen[mgr_name]["aum"] += sig.value_usd
+            managers_seen[mgr_name]["holdings_count"] += 1
+
+        for mgr_data in managers_seen.values():
+            existing = session.execute(
+                select(FundManagerModel).where(FundManagerModel.name == mgr_data["name"])
+            ).scalars().first()
+            if not existing:
+                session.add(FundManagerModel(
+                    manager_id=str(uuid.uuid4()),
+                    name=mgr_data["name"],
+                    aum_usd=Decimal(str(round(mgr_data["aum"], 2))),
+                    style="",
+                    filing_count=1,
+                ))
+
+        # Store holdings and signals
+        for sig in report.position_signals:
+            session.add(HoldingModel(
+                holding_id=str(uuid.uuid4()),
+                manager_id=sig.manager,
+                quarter=report.quarter,
+                ticker=sig.ticker,
+                company=sig.company,
+                sector=sig.sector,
+                shares=Decimal("0"),
+                prior_shares=Decimal("0"),
+                value_usd=Decimal(str(round(sig.value_usd, 2))),
+                weight_pct=Decimal(str(round(sig.weight * 100, 4))),
+                action=sig.action,
+                conviction=sig.conviction,
+            ))
+            session.add(PositionSignalModel(
+                signal_id=str(uuid.uuid4()),
+                quarter=report.quarter,
+                manager=sig.manager,
+                ticker=sig.ticker,
+                company=sig.company,
+                sector=sig.sector,
+                value_usd=Decimal(str(round(sig.value_usd, 2))),
+                weight=Decimal(str(round(sig.weight, 4))),
+                action=sig.action,
+                conviction=sig.conviction,
+            ))
+
+        # Consensus tickers
+        for ticker in (report.consensus_tickers or []):
+            session.add(ConsensusTickerModel(
+                quarter=report.quarter,
+                ticker=ticker,
+                holder_count=0,
+            ))
+
+        # Radar report
+        session.add(RadarReportModel(
+            report_id=report_id,
+            quarter=report.quarter,
+            consensus_tickers=report.consensus_tickers or [],
+            sector_rotation=report.sector_rotation or {},
+            verification_status=report.verification.status,
+            verification_confidence=report.verification.confidence,
+            verification_violations=report.verification.violations or [],
+            total_managers=len(managers_seen),
+            total_holdings=len(report.position_signals),
+            report_json=report.to_dict(),
+            report_markdown=report.to_markdown(),
+        ))
+
+        session.commit()
+        logger.info("Stored radar report %s for quarter %s (%d holdings)", report_id, report.quarter, len(report.position_signals))
+        return {"stored": True, "report_id": report_id, "quarter": report.quarter, "holdings": len(report.position_signals)}
+    except Exception as e:
+        session.rollback()
+        logger.error("Failed to store radar report: %s", e)
+        return {"stored": False, "error": str(e)}
+    finally:
+        session.close()
 
