@@ -26,3 +26,7 @@ PYTHONPATH=src python3 -m hedge_fund_13f_radar.cli analyze \
 The verifier returns `REQUIRES_HUMAN_VERIFICATION` if source URLs are missing, numeric fields are invalid, or the file does not contain enough managers for cross-fund analysis.
 
 This is not investment advice. It is a research workflow and data-quality gate.
+
+## Demo
+
+📺 [Watch the demo](demos/$(basename "$video")) — slide-style walkthrough of key features and usage.
