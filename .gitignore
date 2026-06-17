@@ -6,6 +6,13 @@ dist/
 build/
 .DS_Store
 outputs/
+*.log
+coverage/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
 
 # CHP session artifacts (local only)
 .chp_registry.json

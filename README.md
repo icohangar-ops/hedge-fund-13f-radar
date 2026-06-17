@@ -29,7 +29,7 @@ This is not investment advice. It is a research workflow and data-quality gate.
 
 ## Demo
 
-📺 [Watch the demo](demos/$(basename "$video")) — slide-style walkthrough of key features and usage.
+[Watch the demo](demos/hedge-fund-13f-radar_demo.mp4) — slide-style walkthrough of key features and usage.
 
 ---
 
