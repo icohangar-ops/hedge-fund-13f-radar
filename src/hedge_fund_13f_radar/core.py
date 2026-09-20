@@ -6,10 +6,19 @@ import json
 import logging
 import uuid
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
 from typing import Dict, List
+
+from cubiczan_resilience.verification_gate import (
+    CONFIDENCE_FLOOR,
+    REQUIRES_HUMAN_VERIFICATION,
+    VerificationGate,
+    build_gate,
+)
+
+__all__ = ["VerificationGate", "RadarReport", "analyze_13f"]
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +48,10 @@ class PositionSignal:
     conviction: str
 
 
-@dataclass
-class VerificationGate:
-    status: str
-    confidence: int
-    violations: List[str] = field(default_factory=list)
+# VerificationGate moved to the canonical cubiczan_resilience.verification_gate
+# module (row 29): one deterministic confidence rule for the whole portfolio.
+# This module re-exports it for backwards-compatible imports; construct gates
+# with build_gate().
 
 
 @dataclass
@@ -154,7 +162,20 @@ def _verify(rows: List[Dict[str, str]]) -> VerificationGate:
     violations: List[str] = []
     if not rows:
         violations.append("holdings file is empty")
-        return VerificationGate("REQUIRES_HUMAN_VERIFICATION", 50, violations)
+        # DELIBERATE divergence from the canonical rule (reversible): an empty
+        # holdings file is categorically worse than one minor gap, but
+        # build_gate's equal-weight arithmetic scores one violation 88. We pin
+        # this case at the canonical CONFIDENCE_FLOOR — the floor stays
+        # canonical; only the severity override is local. Migration condition:
+        # when cubiczan_resilience.verification_gate.build_gate grows a
+        # severity-hint parameter, delete this override and call build_gate
+        # directly. Keep in sync with earnings-call-nlp-lab's identical
+        # override and the canonical module's docstring.
+        return VerificationGate(
+            status=REQUIRES_HUMAN_VERIFICATION,
+            confidence=CONFIDENCE_FLOOR,
+            violations=violations,
+        )
     missing = REQUIRED_COLUMNS - set(rows[0].keys())
     if missing:
         violations.append(f"missing columns: {', '.join(sorted(missing))}")
@@ -168,12 +189,13 @@ def _verify(rows: List[Dict[str, str]]) -> VerificationGate:
                 float(row.get(field, ""))
             except ValueError:
                 violations.append(f"row {idx} has invalid numeric field: {field}")
-    confidence = 100 if not violations else max(50, 100 - 10 * len(violations))
-    return VerificationGate(
-        status="CLEAR" if confidence == 100 else "REQUIRES_HUMAN_VERIFICATION",
-        confidence=confidence,
-        violations=violations,
-    )
+    # Canonical arithmetic (row 29): confidence and status come from the
+    # shared rule — PENALTY_PER_VIOLATION=12 per violation, CONFIDENCE_FLOOR=50.
+    # This repo previously used -10; confidences for failing gates drop
+    # accordingly (1 violation: 90 -> 88; that drift is what row 29 ends).
+    # The empty-file case above is the one deliberate local override (pinned
+    # at the floor); everything else is pure canonical.
+    return build_gate(violations)
 
 
 def report_json(report: RadarReport) -> str:

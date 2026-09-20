@@ -72,3 +72,17 @@ def test_import_report_json():
     """Test that report_json helper imports."""
     from hedge_fund_13f_radar.core import report_json
     assert callable(report_json)
+
+
+def test_empty_holdings_file_gates_at_confidence_floor():
+    """Regression (row 29 pre-merge review parity): an empty holdings file is
+    the WORST case and must score at the canonical confidence floor (50),
+    not the equal-weight one-violation score (88). Pinned via the deliberate
+    local divergence in core._verify; drop that override only when the
+    canonical build_gate grows a severity-hint parameter."""
+    from hedge_fund_13f_radar.core import _verify
+
+    gate = _verify([])
+    assert gate.status == "REQUIRES_HUMAN_VERIFICATION"
+    assert gate.confidence == 50
+    assert gate.violations == ["holdings file is empty"]
