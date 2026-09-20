@@ -12,8 +12,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from cubiczan_resilience.verification_gate import (
-    CONFIDENCE_FLOOR,
-    REQUIRES_HUMAN_VERIFICATION,
+    SEVERITY_FLOOR,
     VerificationGate,
     build_gate,
 )
@@ -161,21 +160,13 @@ def _sector_rotation(rows: List[Dict[str, str]]) -> Dict[str, float]:
 def _verify(rows: List[Dict[str, str]]) -> VerificationGate:
     violations: List[str] = []
     if not rows:
+        # An empty holdings file is categorically worse than one minor gap, so
+        # the gate pins at the floor. The severity-hint parameter
+        # (cubiczan-resilience 0.2.1) carries that decision in the canonical
+        # module — this repo's former local override existed only until the
+        # parameter did, per its keep-in-sync migration condition (row 29).
         violations.append("holdings file is empty")
-        # DELIBERATE divergence from the canonical rule (reversible): an empty
-        # holdings file is categorically worse than one minor gap, but
-        # build_gate's equal-weight arithmetic scores one violation 88. We pin
-        # this case at the canonical CONFIDENCE_FLOOR — the floor stays
-        # canonical; only the severity override is local. Migration condition:
-        # when cubiczan_resilience.verification_gate.build_gate grows a
-        # severity-hint parameter, delete this override and call build_gate
-        # directly. Keep in sync with earnings-call-nlp-lab's identical
-        # override and the canonical module's docstring.
-        return VerificationGate(
-            status=REQUIRES_HUMAN_VERIFICATION,
-            confidence=CONFIDENCE_FLOOR,
-            violations=violations,
-        )
+        return build_gate(violations, severity_hint=SEVERITY_FLOOR)
     missing = REQUIRED_COLUMNS - set(rows[0].keys())
     if missing:
         violations.append(f"missing columns: {', '.join(sorted(missing))}")
@@ -193,8 +184,6 @@ def _verify(rows: List[Dict[str, str]]) -> VerificationGate:
     # shared rule — PENALTY_PER_VIOLATION=12 per violation, CONFIDENCE_FLOOR=50.
     # This repo previously used -10; confidences for failing gates drop
     # accordingly (1 violation: 90 -> 88; that drift is what row 29 ends).
-    # The empty-file case above is the one deliberate local override (pinned
-    # at the floor); everything else is pure canonical.
     return build_gate(violations)
 
 
