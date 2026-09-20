@@ -77,9 +77,9 @@ def test_import_report_json():
 def test_empty_holdings_file_gates_at_confidence_floor():
     """Regression (row 29 pre-merge review parity): an empty holdings file is
     the WORST case and must score at the canonical confidence floor (50),
-    not the equal-weight one-violation score (88). Pinned via the deliberate
-    local divergence in core._verify; drop that override only when the
-    canonical build_gate grows a severity-hint parameter."""
+    not the equal-weight one-violation score (88). The floor now comes from
+    the canonical build_gate severity-hint parameter (cubiczan-resilience
+    0.2.1); the former local override in core._verify is retired."""
     from hedge_fund_13f_radar.core import _verify
 
     gate = _verify([])

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Cubiczan" }]
 dependencies = [
-    "cubiczan-resilience @ git+https://github.com/icohangar-ops/cubiczan-resilience.git@09ceaf3a31fbf041fd1a6e736fa7c237218e2e8f#subdirectory=python",
+    "cubiczan-resilience @ git+https://github.com/icohangar-ops/cubiczan-resilience.git@2a35120bd21ed967a8d72a34c2d0f3e6807cad67#subdirectory=python",
 ]
 
 [project.scripts]
