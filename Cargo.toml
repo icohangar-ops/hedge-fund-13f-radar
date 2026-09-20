@@ -6,6 +6,9 @@ authors = ["icohangar-ops"]
 license = "MIT"
 description = "Hedge fund 13F filing analysis — conviction tracking and sector rotation"
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -16,3 +19,10 @@ statrs = "0.16"
 ndarray = "0.15"
 num-traits = "0.2"
 num = "0.4"
+# Optional: pyo3 bindings, compiled only with the `python` feature (maturin).
+pyo3 = { version = "0.29", optional = true, features = ["chrono"] }
+pythonize = { version = "0.29", optional = true }
+
+[features]
+# Opt-in Python surface — plain `cargo test` is unaffected.
+python = ["dep:pyo3", "dep:pythonize", "pyo3/extension-module", "pyo3/abi3-py310"]

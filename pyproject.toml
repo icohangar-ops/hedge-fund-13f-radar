@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "hedge-fund-13f-radar"
@@ -14,6 +14,8 @@ dependencies = []
 [project.scripts]
 hedge-fund-13f-radar = "hedge_fund_13f_radar.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
+[tool.maturin]
+python-source = "src"
+module-name = "hedge_fund_13f_radar._native"
+# Compile the Rust engine's pyo3 bindings (opt-in feature in Cargo.toml).
+features = ["python"]

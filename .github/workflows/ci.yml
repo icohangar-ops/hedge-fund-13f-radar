@@ -19,3 +19,31 @@ jobs:
           pip install pytest
       - name: Run tests
         run: pytest tests/ -v --tb=short
+
+  native-bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Run Rust engine tests (default features)
+        run: cargo test --locked
+      - name: Type-check the pyo3 bindings (no link)
+        run: cargo check --features python
+      - name: Build and install the native bindings
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install maturin pytest
+          maturin develop
+      - name: Run Python binding tests
+        run: |
+          source .venv/bin/activate
+          pytest tests/ -v --tb=short
+      - name: Run the end-to-end Python demo
+        run: |
+          source .venv/bin/activate
+          python examples/python_demo.py

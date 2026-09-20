@@ -45,6 +45,10 @@ pub mod consensus;
 pub mod sector;
 pub mod pipeline;
 
+// Optional pyo3 bindings — compiled only with the `python` feature (see pyproject.toml).
+#[cfg(feature = "python")]
+pub mod python;
+
 // Re-export commonly used types at the crate root for convenience
 pub use types::{
     ConsensusSignal, ConvictionLevel, CusipMap, Filing13F, Holding, Manager,

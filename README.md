@@ -33,6 +33,45 @@ This is not investment advice. It is a research workflow and data-quality gate.
 
 ---
 
+## Python Bindings (pyo3)
+
+The Rust engine is also exposed as a native Python module via [pyo3](https://github.com/PyO3/pyo3) and [maturin](https://github.com/PyO3/maturin) — same engine, same outputs, driven from Python.
+
+### Build
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install maturin
+maturin develop
+```
+
+`maturin develop` compiles the crate with the `python` feature (opt-in in `Cargo.toml`, so plain `cargo build`/`cargo test` are unaffected) and installs `hedge_fund_13f_radar` into the active virtualenv. For a distributable wheel: `maturin build --release`.
+
+### Use
+
+```python
+from hedge_fund_13f_radar import Pipeline, FilingBuilder, diff_filings, QuarterlyAggregator
+
+pipeline = Pipeline()
+result = pipeline.run(prior_quarter_filings, current_quarter_filings, "2025-Q4", "2026-Q1")
+
+print(result.summary_report())        # full radar report
+for diff in result.diffs:             # per-manager position changes
+    print(diff["manager_name"], diff["summary"])
+for signal in result.consensus_signals:
+    print(signal["ticker"], signal["net_direction"])
+```
+
+Filing and holding inputs are plain dicts (serde-mapped to the engine's `Filing13F`/`RawHolding` structures); a complete end-to-end walk-through — sample CSV in, engine analysis out — lives in [`examples/python_demo.py`](examples/python_demo.py):
+
+```bash
+python examples/python_demo.py
+```
+
+Python integration tests mirroring the core Rust test paths are in `tests/test_native_engine.py` (`pytest tests/` — they run in CI against the built bindings). The pure-Python fallback surface (`analyze_13f`) still works without the native module.
+
+---
+
 ## CHP Governance
 
 This repository is hardened with the [Consensus Hardening Protocol (CHP)](https://codeberg.org/cubiczan/consensus-hardening-protocol), Cubiczan's decision-governance layer for multi-agent AI systems.
