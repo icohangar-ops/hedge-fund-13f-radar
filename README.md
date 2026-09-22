@@ -16,7 +16,7 @@ PYTHONPATH=src python3 -m hedge_fund_13f_radar.cli analyze \
 - initiation, exit, increase, and decrease detection
 - cross-fund consensus tickers
 - sector rotation table
-- high-conviction ideas by fund
+- high-conviction positions by manager and cross-fund conviction signals
 - CHP-style verification status
 
 ## Required Columns
@@ -98,4 +98,8 @@ This repository is hardened with the [Consensus Hardening Protocol (CHP)](https:
 
 ### CHP Version
 cognitive-mesh-orchestrator 0.1.0 | [Protocol Docs](https://codeberg.org/cubiczan/consensus-hardening-protocol)
+
+## Evidence Matrix
+
+Every capability claim in this file is backed by [`evidence/matrix.yaml`](evidence/matrix.yaml): each row binds a claim to deterministic evidence — a named test, an executable check, a pinned manifest field, or a hashed artifact. The fail-closed verifier (`tools/verify_evidence_matrix.py`, vendored byte-identical from the canonical kit [icohangar-ops/consensus-hardening-protocol](https://github.com/icohangar-ops/consensus-hardening-protocol)) runs in CI on every pull request and every push to `main`, before any install step; a red `evidence-matrix` job means a claim in this file is not evidence-backed.
 

@@ -1,0 +1,185 @@
+# Evidence matrix — hedge-fund-13f-radar (schema v1, spec art_6m9smoMm)
+#
+# Every capability claim stated in README.md is bound here to deterministic
+# evidence. The fail-closed verifier (tools/verify_evidence_matrix.py, vendored
+# byte-identical from the canonical kit icohangar-ops/consensus-hardening-protocol,
+# EVIDENCE_MATRIX_VERIFIER_VERSION 1.0.0, vendored from kit commit 88067e4)
+# re-executes every row on every CI run; there is no invocation of it that
+# passes an unverified repo.
+#
+# Evidence vocabulary (closed set, schema v1): test | script | manifest_field |
+# artifact_hash. pytest node ids are checked statically here and executed by the
+# repo's normal CI test jobs (`test` in .github/workflows/ci.yml; the
+# `native-bindings` job runs `cargo test --locked` and pytest against the built
+# bindings, which is what executes cargo-test: rows and the native-surface rows).
+schema_version: 1
+repo: hedge-fund-13f-radar
+claims:
+  - id: C001
+    claim: >-
+      Repeatable open-source workflow for tracking hedge fund conviction,
+      initiations, exits, and sector rotation from normalized 13F data.
+    source: "README.md"
+    evidence:
+      - type: test
+        ref: "tests/test_13f_radar.py::test_13f_radar_detects_initiations_and_consensus"
+      - type: test
+        ref: "cargo-test:pipeline"
+      - type: test
+        ref: "cargo-test:diff"
+  - id: C002
+    claim: >-
+      The Quick Start command (PYTHONPATH=src python3 -m
+      hedge_fund_13f_radar.cli analyze --holdings examples/holdings_13f.csv
+      --json) runs the analysis and prints the report as JSON.
+    source: "README.md#quick-start"
+    evidence:
+      - type: test
+        ref: "tests/test_cli.py::test_quick_start_analyze_json"
+      - type: artifact_hash
+        ref: "examples/holdings_13f.csv"
+        sha256: "685b8dd2b8c0153a78addb59aa552ff854e7be4e73a0fd1df58317cb1da9fdca"
+  - id: C003
+    claim: "Manager-level top positions (per-manager signals ranked by conviction and weight)."
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "tests/test_basic.py::test_radar_report_to_markdown"
+      - type: test
+        ref: "tests/test_native_engine.py::test_full_pipeline_multi_manager"
+      - type: test
+        ref: "cargo-test:pipeline"
+  - id: C004
+    claim: "Initiation, exit, increase, and decrease detection."
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "cargo-test:diff"
+      - type: test
+        ref: "tests/test_native_engine.py::test_diff_filings"
+      - type: test
+        ref: "tests/test_13f_radar.py::test_13f_radar_detects_initiations_and_consensus"
+  - id: C005
+    claim: "Cross-fund consensus tickers (tickers held by two or more managers)."
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "cargo-test:consensus"
+      - type: test
+        ref: "tests/test_13f_radar.py::test_13f_radar_detects_initiations_and_consensus"
+  - id: C006
+    claim: "Sector rotation table."
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "cargo-test:sector"
+      - type: test
+        ref: "tests/test_native_engine.py::test_sector_rotation"
+      - type: test
+        ref: "tests/test_13f_radar.py::test_13f_radar_detects_initiations_and_consensus"
+  - id: C007
+    claim: >-
+      High-conviction positions by manager and cross-fund high-conviction
+      tickers (per-signal conviction classification; PipelineResult.high_conviction).
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "cargo-test:consensus"
+      - type: test
+        ref: "tests/test_native_engine.py::test_full_pipeline_multi_manager"
+  - id: C008
+    claim: "CHP-style verification status (VerificationGate on every report)."
+    source: "README.md#what-it-produces"
+    evidence:
+      - type: test
+        ref: "tests/test_basic.py::test_verification_gate_dataclass"
+      - type: test
+        ref: "tests/test_basic.py::test_empty_holdings_file_gates_at_confidence_floor"
+      - type: test
+        ref: "tests/test_13f_radar.py::test_13f_radar_detects_initiations_and_consensus"
+  - id: C009
+    claim: >-
+      The verifier returns REQUIRES_HUMAN_VERIFICATION if source URLs are
+      missing, numeric fields are invalid, or the file does not contain enough
+      managers for cross-fund analysis.
+    source: "README.md#required-columns"
+    evidence:
+      - type: test
+        ref: "tests/test_verification_claims.py::test_gate_flags_missing_source_urls"
+      - type: test
+        ref: "tests/test_verification_claims.py::test_gate_flags_invalid_numeric_fields"
+      - type: test
+        ref: "tests/test_verification_claims.py::test_gate_flags_insufficient_managers_for_cross_fund"
+  - id: C010
+    claim: >-
+      The Required Columns list in the README
+      (manager,quarter,ticker,company,sector,shares,prior_shares,value_usd,source_url)
+      matches core.REQUIRED_COLUMNS exactly.
+    source: "README.md#required-columns"
+    evidence:
+      - type: script
+        ref: "scripts/verify_required_columns.py"
+        timeout_seconds: 60
+  - id: C011
+    claim: >-
+      The Rust engine is exposed as a native Python module via pyo3 and maturin
+      (hedge_fund_13f_radar._native, compiled with the opt-in `python` feature).
+    source: "README.md#python-bindings-pyo3"
+    evidence:
+      - type: test
+        ref: "tests/test_native_engine.py::test_package_reexports_native_engine"
+      - type: test
+        ref: "cargo-test:pipeline"
+  - id: C012
+    claim: >-
+      Python integration tests mirroring the core Rust test paths live in
+      tests/test_native_engine.py and run in CI against the built bindings.
+    source: "README.md#python-bindings-pyo3"
+    evidence:
+      - type: test
+        ref: "tests/test_native_engine.py::test_full_pipeline_multi_manager"
+      - type: test
+        ref: "tests/test_native_engine.py::test_whale_detection"
+  - id: C013
+    claim: "The pure-Python fallback surface (analyze_13f) still works without the native module."
+    source: "README.md#python-bindings-pyo3"
+    evidence:
+      - type: test
+        ref: "tests/test_fallback_surface.py::test_analyze_13f_runs_without_native_module"
+      - type: test
+        ref: "tests/test_basic.py::test_import_package"
+  - id: C014
+    claim: >-
+      examples/python_demo.py is a complete end-to-end walk-through: sample CSV
+      in, engine analysis out (python examples/python_demo.py).
+    source: "README.md#use"
+    evidence:
+      - type: test
+        ref: "tests/test_native_engine.py::test_python_demo_end_to_end"
+      - type: artifact_hash
+        ref: "examples/holdings_13f.csv"
+        sha256: "685b8dd2b8c0153a78addb59aa552ff854e7be4e73a0fd1df58317cb1da9fdca"
+  - id: C015
+    claim: "CHP Domain Configuration — Foundation Threshold: 100."
+    source: "README.md#domain-configuration"
+    evidence:
+      - type: manifest_field
+        ref: ".chp/R0_CONFIG.yaml:foundation.pass_threshold"
+        equals: 100
+  - id: C016
+    claim: "CHP Domain Configuration — CFO Accuracy Guard: Enabled."
+    source: "README.md#domain-configuration"
+    evidence:
+      - type: manifest_field
+        ref: ".chp/R0_CONFIG.yaml:cfo_accuracy.enabled"
+        equals: true
+  - id: C017
+    claim: >-
+      The CHP compliance artifacts named in the README
+      (.chp/STATE_MACHINE.md, .chp/R0_CONFIG.yaml, .chp/ADVERSARIAL_PROMPTS.md,
+      .chp/CHP_COMPLIANCE.md) exist in the repo.
+    source: "README.md#compliance-artifacts"
+    evidence:
+      - type: script
+        ref: "scripts/verify_chp_artifacts.py"
+        timeout_seconds: 60

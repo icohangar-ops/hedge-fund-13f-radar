@@ -465,3 +465,25 @@ def test_package_reexports_native_engine():
     assert hedge_fund_13f_radar.HAS_NATIVE_ENGINE is True
     assert hedge_fund_13f_radar.Pipeline is radar.Pipeline
     assert "Pipeline" in hedge_fund_13f_radar.__all__
+
+
+def test_python_demo_end_to_end():
+    """The README's claimed walk-through (`python examples/python_demo.py`)
+    must run end-to-end against the built bindings: sample CSV in, engine
+    analysis out, exit 0, sanity assertions inside the demo passing."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    proc = subprocess.run(
+        [sys.executable, "examples/python_demo.py"],
+        cwd=str(repo_root),
+        env=dict(os.environ, PYTHONPATH=str(repo_root / "src")),
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "OK: engine-driven analysis matches the sample data." in proc.stdout

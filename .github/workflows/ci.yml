@@ -5,6 +5,15 @@ on:
   pull_request:
     branches: [main]
 jobs:
+  evidence-matrix:
+    # Fail-closed gate, no install steps: every capability claim in README.md
+    # must be machine-verified by evidence/matrix.yaml before anything installs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify evidence matrix
+        run: python3 tools/verify_evidence_matrix.py
+
   test:
     runs-on: ubuntu-latest
     steps:
